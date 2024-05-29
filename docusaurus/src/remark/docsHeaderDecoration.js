@@ -1,6 +1,7 @@
-const visit = require("unist-util-visit").visit;
+const { getFromPaths } = require("../helpers/objects");
 const { isDocsPage, getRegistryEntry } = require("./utils");
-const { isPypiConnector } = require("../connector_registry");
+const { isPypiConnector, getLatestPythonCDKVersion, parseCDKVersion } = require("../connector_registry");
+const visit = require("unist-util-visit").visit;
 
 const toAttributes = (props) =>
   Object.entries(props).map(([key, value]) => ({
@@ -15,6 +16,7 @@ const plugin = () => {
     if (!docsPageInfo.isDocsPage) return;
 
     const registryEntry = await getRegistryEntry(vfile);
+    const latestPythonCdkVersion = await getLatestPythonCDKVersion();
 
     if (!registryEntry) return;
 
@@ -24,6 +26,13 @@ const plugin = () => {
       if (firstHeading && node.depth === 1 && node.children.length === 1) {
         const originalTitle = node.children[0].value;
         const originalId = node.data.hProperties.id;
+
+        const rawCDKVersion = getFromPaths(registryEntry, "packageInfo_[oss|cloud].cdk_version");
+        const syncSuccessRate = getFromPaths(registryEntry, "generated_[oss|cloud].metrics.cloud.sync_success_rate");
+        const usageRate = getFromPaths(registryEntry, "generated_[oss|cloud].metrics.[all|cloud|oss].usage");
+        const lastUpdated = getFromPaths(registryEntry, "generated_[oss|cloud].source_file_info.metadata_last_modified");
+
+        const {version, isLatest, url} = parseCDKVersion(rawCDKVersion, latestPythonCdkVersion);
 
         firstHeading = false;
         node.children = [];
@@ -40,6 +49,12 @@ const plugin = () => {
           issue_url: registryEntry.issue_url,
           originalTitle,
           originalId,
+          cdkVersion: version,
+          isLatestCDKString: isLatest ? "TRUE" : "FALSE",
+          cdkVersionUrl: url,
+          syncSuccessRate,
+          usageRate,
+          lastUpdated,
         });
       }
     });

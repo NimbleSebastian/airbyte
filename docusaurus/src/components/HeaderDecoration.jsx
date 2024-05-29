@@ -1,7 +1,12 @@
 import React from "react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import styles from "./HeaderDecoration.module.css";
 import { Chip } from "./Chip";
 import { Callout } from "./Callout";
+
+// Extend Day.js with the relativeTime plugin
+dayjs.extend(relativeTime);
 
 const CHECK_ICON = (
   <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
@@ -34,7 +39,40 @@ const EnabledIcon = ({ isEnabled }) => {
   return isEnabled ? CHECK_ICON : CROSS_ICON;
 };
 
-const ConnectorMetadataCallout = ({ isCloud, isOss, isPypiPublished, supportLevel, github_url, dockerImageTag }) => (
+const compactHumanizeDate = (date) => {
+  const verboseHumanDate = dayjs(date).fromNow()
+
+  return verboseHumanDate
+    .replace(" hours", "h")
+    .replace(" hour", "h")
+    .replace(" minutes", "m")
+    .replace(" minute", "m")
+    .replace(" seconds", "s")
+    .replace(" second", "s")
+    .replace(" days", "d")
+    .replace(" day", "d")
+    .replace(" weeks", "w")
+    .replace(" week", "w")
+    .replace(" months", "m")
+    .replace(" month", "m")
+    .replace(" years", "y")
+    .replace(" year", "y");
+};
+
+const ConnectorMetadataCallout = ({
+  isCloud,
+  isOss,
+  isPypiPublished,
+  supportLevel,
+  github_url,
+  dockerImageTag,
+  cdkVersion,
+  isLatestCDK,
+  cdkVersionUrl,
+  syncSuccessRate,
+  usageRate,
+  lastUpdated,
+}) => (
   <Callout className={styles.connectorMetadataCallout}>
     <dl className={styles.connectorMetadata}>
       <MetadataStat label="Availability">
@@ -60,8 +98,33 @@ const ConnectorMetadataCallout = ({ isCloud, isOss, isPypiPublished, supportLeve
           <a href={github_url} target="_blank">
             {dockerImageTag}
           </a>
+          {lastUpdated && <span className={styles.deemphasizeText}>{`(Last updated ${compactHumanizeDate(lastUpdated)})`}</span>}
         </MetadataStat>
       )}
+      {
+        cdkVersion && (
+          <MetadataStat label="CDK Version">
+            <a target="_blank" href={cdkVersionUrl}>
+              {cdkVersion}
+            </a>
+            {isLatestCDK && <span className={styles.deemphasizeText}>{"(Latest)"}</span>}
+          </MetadataStat>
+        )
+      }
+      {
+        syncSuccessRate && (
+          <MetadataStat label="Sync Success Rate">
+            <Chip>{syncSuccessRate}</Chip>
+          </MetadataStat>
+        )
+      }
+      {
+        usageRate && (
+          <MetadataStat label="Usage Rate">
+            <Chip>{usageRate}</Chip>
+          </MetadataStat>
+        )
+      }
     </dl>
   </Callout>
 );
@@ -91,11 +154,28 @@ export const HeaderDecoration = ({
   originalTitle,
   originalId,
   github_url,
+  cdkVersion,
+  isLatestCDKString,
+  cdkVersionUrl,
+  syncSuccessRate,
+  usageRate,
+  lastUpdated,
 }) => {
   const isOss = isOssString.toUpperCase() === "TRUE";
   const isCloud = isCloudString.toUpperCase() === "TRUE";
   const isPypiPublished = isPypiPublishedString.toUpperCase() === "TRUE";
   const isArchived = supportLevel.toUpperCase() === "ARCHIVED";
+  const isLatestCDK = isLatestCDKString.toUpperCase() === "TRUE";
+
+  console.log("values2", {
+    cdkVersion,
+    syncSuccessRate,
+    usageRate,
+    lastUpdated,
+    isLatestCDK,
+    cdkVersionUrl,
+  })
+
 
   return (
     <>
@@ -112,6 +192,12 @@ export const HeaderDecoration = ({
         supportLevel={supportLevel}
         github_url={github_url}
         dockerImageTag={dockerImageTag}
+        cdkVersion={cdkVersion}
+        cdkVersionUrl={cdkVersionUrl}
+        isLatestCDK={isLatestCDK}
+        syncSuccessRate={syncSuccessRate}
+        usageRate={usageRate}
+        lastUpdated={lastUpdated}
       />
     </>
   );

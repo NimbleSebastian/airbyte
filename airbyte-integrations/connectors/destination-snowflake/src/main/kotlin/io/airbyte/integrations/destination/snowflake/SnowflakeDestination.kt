@@ -63,7 +63,7 @@ constructor(
     private val airbyteEnvironment: String,
     private val nameTransformer: NamingConventionTransformer = SnowflakeSQLNameTransformer(),
 ) : BaseConnector(), Destination {
-    private val destinationColumns = JavaBaseConstants.DestinationColumns.V2_WITHOUT_META
+    private val destinationColumns = JavaBaseConstants.DestinationColumns.V2_WITH_GENERATION
 
     override fun check(config: JsonNode): AirbyteConnectionStatus? {
         val dataSource = getDataSource(config)
